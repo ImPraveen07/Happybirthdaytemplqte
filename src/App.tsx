@@ -83,7 +83,7 @@ const TYPED_LINES = [
   "...",
   "> so i made you this computer program",
   "...",
-  "٩(◕‿◕)۶ ٩(◕‿◕)۶ ٩(◕‿◕)۶"
+  "٩(◕‿◕)۶ ٩(◕‿◕)۶ ٩(◕‿◕)۶",
 ];
 const TYPED_CHAR_DELAY = 100;
 const POST_TYPING_SCENE_DELAY = 1000;
@@ -101,8 +101,8 @@ const BIRTHDAY_CARDS: ReadonlyArray<BirthdayCardConfig> = [
     id: "confetti",
     image: "/card.png",
     position: [1, 0.081, -2],
-    rotation: [-Math.PI / 2 , 0, Math.PI / 3],
-  }
+    rotation: [-Math.PI / 2, 0, Math.PI / 3],
+  },
 ];
 
 function AnimatedScene({
@@ -357,14 +357,14 @@ function EnvironmentBackgroundController({
   useEffect(() => {
     if ("backgroundIntensity" in scene) {
       // Cast required because older typings might not include backgroundIntensity yet.
-      (scene as typeof scene & { backgroundIntensity: number }).backgroundIntensity =
-        intensity;
+      (
+        scene as typeof scene & { backgroundIntensity: number }
+      ).backgroundIntensity = intensity;
     }
   }, [scene, intensity]);
 
   return null;
 }
-
 
 export default function App() {
   const [hasStarted, setHasStarted] = useState(false);
@@ -379,6 +379,12 @@ export default function App() {
   const [fireworksActive, setFireworksActive] = useState(false);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   const backgroundAudioRef = useRef<HTMLAudioElement | null>(null);
+  const isTouchDevice = useMemo(() => {
+    return (
+      (typeof window !== "undefined" && "ontouchstart" in window) ||
+      navigator.maxTouchPoints > 0
+    );
+  }, []);
 
   useEffect(() => {
     const audio = new Audio("/music.mp3");
@@ -507,6 +513,20 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [hasStarted, hasAnimationCompleted, isCandleLit, playBackgroundMusic]);
 
+  const handleStart = useCallback(() => {
+    if (!hasStarted) {
+      playBackgroundMusic();
+      setHasStarted(true);
+    }
+  }, [hasStarted, playBackgroundMusic]);
+
+  const handleBlowCandle = useCallback(() => {
+    if (hasAnimationCompleted && isCandleLit) {
+      setIsCandleLit(false);
+      setFireworksActive(true);
+    }
+  }, [hasAnimationCompleted, isCandleLit]);
+
   const handleCardToggle = useCallback((id: string) => {
     setActiveCardId((current) => (current === id ? null : id));
   }, []);
@@ -515,6 +535,13 @@ export default function App() {
 
   return (
     <div className="App">
+      {!hasStarted && isTouchDevice && (
+        <div className="start-overlay">
+          <button className="cta-button" onClick={handleStart}>
+            {isTouchDevice ? "Tap to start" : "Press space to start"}
+          </button>
+        </div>
+      )}
       <div
         className="background-overlay"
         style={{ opacity: backgroundOpacity }}
@@ -539,10 +566,15 @@ export default function App() {
         </div>
       </div>
       {hasAnimationCompleted && isCandleLit && (
-        <div className="hint-overlay">press space to blow out the candle</div>
+        <div className="hint-overlay">
+          {isTouchDevice
+            ? "tap to blow out the candle"
+            : "press space to blow out the candle"}
+        </div>
       )}
       <Canvas
         gl={{ alpha: true }}
+        dpr={[1, 1.5]}
         style={{ background: "transparent" }}
         onCreated={({ gl }) => {
           gl.setClearColor("#000000", 0);
@@ -560,7 +592,11 @@ export default function App() {
             onToggleCard={handleCardToggle}
           />
           <ambientLight intensity={(1 - environmentProgress) * 0.8} />
-          <directionalLight intensity={0.5} position={[2, 10, 0]} color={[1, 0.9, 0.95]}/>
+          <directionalLight
+            intensity={0.5}
+            position={[2, 10, 0]}
+            color={[1, 0.9, 0.95]}
+          />
           <Environment
             files={["/shanghai_bund_4k.hdr"]}
             backgroundRotation={[0, 3.3, 0]}
@@ -569,11 +605,20 @@ export default function App() {
             environmentIntensity={0.1 * environmentProgress}
             backgroundIntensity={0.05 * environmentProgress}
           />
-          <EnvironmentBackgroundController intensity={0.05 * environmentProgress} />
+          <EnvironmentBackgroundController
+            intensity={0.05 * environmentProgress}
+          />
           <Fireworks isActive={fireworksActive} origin={[0, 10, 0]} />
           <ConfiguredOrbitControls />
         </Suspense>
       </Canvas>
+      {hasAnimationCompleted && isCandleLit && isTouchDevice && (
+        <div className="action-overlay">
+          <button className="cta-button" onClick={handleBlowCandle}>
+            {isTouchDevice ? "Tap to blow out" : "Press space to blow out"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -4,7 +4,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -88,4 +89,41 @@ canvas {
   opacity: 0.85;
   pointer-events: none;
   z-index: 3;
+}
+
+/* Mobile-only action overlays (rendered conditionally in App) */
+.start-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+  pointer-events: auto;
+}
+
+.action-overlay {
+  position: absolute;
+  bottom: 6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  pointer-events: auto;
+}
+
+.cta-button {
+  background: linear-gradient(180deg, #ffe7b8, #ffc98a);
+  color: #3b2200;
+  border: none;
+  border-radius: 12px;
+  padding: 0.9rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+.cta-button:active {
+  transform: translateY(1px);
 }
