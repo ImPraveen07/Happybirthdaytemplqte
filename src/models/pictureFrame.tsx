@@ -25,6 +25,7 @@ export function PictureFrame({
   image,
   imageScale = DEFAULT_IMAGE_SCALE,
   imageOffset,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   imageInset = 0.01,
   children,
   ...groupProps
@@ -63,11 +64,7 @@ export function PictureFrame({
   const imageWidth = frameSize.x * imageScaleX;
   const imageHeight = frameSize.y * imageScaleY;
 
-  const [offsetX, offsetY, offsetZ] = imageOffset ?? [
-    0,
-    0.05,
-    -0.27,
-  ];
+  const [offsetX, offsetY, offsetZ] = imageOffset ?? [0, 0.05, -0.27];
 
   const imagePosition: [number, number, number] = [
     frameCenter.x + offsetX,
@@ -95,11 +92,15 @@ export function PictureFrame({
   return (
     <group {...groupProps}>
       <group rotation={[0.04, 0, 0]}>
-      <primitive object={frameScene} />
-      <mesh position={imagePosition} rotation={[0.435, Math.PI, 0]} material={pictureMaterial}>
-        <planeGeometry args={[imageWidth, imageHeight]} />
-      </mesh>
-      {children}
+        <primitive object={frameScene} />
+        <mesh
+          position={imagePosition}
+          rotation={[0.435, Math.PI, 0]}
+          material={pictureMaterial}
+        >
+          <planeGeometry args={[imageWidth, imageHeight]} />
+        </mesh>
+        {children}
       </group>
     </group>
   );
