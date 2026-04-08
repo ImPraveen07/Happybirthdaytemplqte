@@ -18,15 +18,22 @@ import { Fireworks } from "./components/Fireworks";
 import { BirthdayCard } from "./components/BirthdayCard";
 import "./App.css";
 
-// --- FIREBASE CONFIG ---
+
 const firebaseConfig = {
-  apiKey: "AIzaSyAHjilh7jAlS0e5qDKxbDZq3nbe3pFe4nE",
-  authDomain: "instagram-e8c7a.firebaseapp.com",
-  projectId: "instagram-e8c7a",
-  storageBucket: "instagram-e8c7a.firebasestorage.app",
-  messagingSenderId: "270990839800",
-  appId: "1:270990839800:web:7f56ea2ea8d941219fd00d"
+  apiKey: "AIzaSyDHJN7qXE0xaaOT39XCf_pbyeVQgNYoUeY",
+  authDomain: "haaa-6f437.firebaseapp.com",
+  databaseURL: "https://haaa-6f437-default-rtdb.firebaseio.com",
+  projectId: "haaa-6f437",
+  storageBucket: "haaa-6f437.firebasestorage.app",
+  messagingSenderId: "59682444868",
+  appId: "1:59682444868:web:b50f7e1cac94325d534e11",
+  measurementId: "G-XQ6T8SH7K6"
 };
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app); // We use 'db' for the birthday logic
+
+  
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
