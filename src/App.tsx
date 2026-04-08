@@ -6,9 +6,10 @@ import { Vector3 } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
 // Firebase Imports
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDoc, doc } from "firebase/firestore";
 
+
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
 // Your Components
 import { Candle } from "./models/candle";
 import { Cake } from "./models/cake";
@@ -19,16 +20,21 @@ import { BirthdayCard } from "./components/BirthdayCard";
 import "./App.css";
 
 
+
+
+
 const firebaseConfig = {
-  apiKey: "AIzaSyDHJN7qXE0xaaOT39XCf_pbyeVQgNYoUeY",
-  authDomain: "haaa-6f437.firebaseapp.com",
-  databaseURL: "https://haaa-6f437-default-rtdb.firebaseio.com",
-  projectId: "haaa-6f437",
-  storageBucket: "haaa-6f437.firebasestorage.app",
-  messagingSenderId: "59682444868",
-  appId: "1:59682444868:web:b50f7e1cac94325d534e11",
-  measurementId: "G-XQ6T8SH7K6"
+  apiKey: "AIzaSyAK4RsutqLec4B7RqVxSEohnpepy-6kwno",
+  authDomain: "saver-87208.firebaseapp.com",
+  projectId: "saver-87208",
+  storageBucket: "saver-87208.firebasestorage.app",
+  messagingSenderId: "365849173760",
+  appId: "1:365849173760:web:f00f1a55982ee8d1fb5de5",
+  measurementId: "G-X8CWNDSX9W"
 };
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app); // This is what saves the photos and name
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app); // We use 'db' for the birthday logic
