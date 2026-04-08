@@ -20,6 +20,41 @@ import { BirthdayCard } from "./components/BirthdayCard";
 
 import "./App.css";
 
+// --- VIRTUAL KEYBOARD COMPONENT ---
+const VirtualKeyboard = ({ onAction }: { onAction: () => void }) => {
+  return (
+    <div className="mobile-controls" style={{
+      position: 'absolute',
+      bottom: '40px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      zIndex: 2000,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '10px'
+    }}>
+      <button 
+        onPointerDown={(e) => { e.preventDefault(); onAction(); }}
+        style={{
+          padding: '15px 30px',
+          fontSize: '18px',
+          borderRadius: '50px',
+          border: '2px solid white',
+          background: 'rgba(255, 255, 255, 0.2)',
+          color: 'white',
+          backdropFilter: 'blur(10px)',
+          fontWeight: 'bold',
+          touchAction: 'none'
+        }}
+      >
+        TAP TO BLOW 🕯️
+      </button>
+    </div>
+  );
+};
+
+// ... (Keep all your existing constants like CAKE_START_Y, etc. exactly the same)
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
@@ -365,7 +400,6 @@ function EnvironmentBackgroundController({
   return null;
 }
 
-
 export default function App() {
   const [hasStarted, setHasStarted] = useState(false);
   const [backgroundOpacity, setBackgroundOpacity] = useState(1);
@@ -393,42 +427,40 @@ export default function App() {
 
   const playBackgroundMusic = useCallback(() => {
     const audio = backgroundAudioRef.current;
-    if (!audio) {
-      return;
-    }
-    if (!audio.paused) {
-      return;
-    }
+    if (!audio) return;
+    if (!audio.paused) return;
     audio.currentTime = 0;
-    void audio.play().catch(() => {
-      // ignore play errors (browser might block)
-    });
+    void audio.play().catch(() => {});
   }, []);
+
+  // --- REUSABLE START LOGIC ---
+  const handleStart = useCallback(() => {
+    if (!hasStarted) {
+      playBackgroundMusic();
+      setHasStarted(true);
+    }
+  }, [hasStarted, playBackgroundMusic]);
+
+  // --- REUSABLE BLOW LOGIC ---
+  const handleBlowCandle = useCallback(() => {
+    if (hasAnimationCompleted && isCandleLit) {
+      setIsCandleLit(false);
+      setFireworksActive(true);
+    }
+  }, [hasAnimationCompleted, isCandleLit]);
 
   const typingComplete = currentLineIndex >= TYPED_LINES.length;
   const typedLines = useMemo(() => {
-    if (TYPED_LINES.length === 0) {
-      return [""];
-    }
-
+    if (TYPED_LINES.length === 0) return [""];
     return TYPED_LINES.map((line, index) => {
-      if (typingComplete || index < currentLineIndex) {
-        return line;
-      }
-      if (index === currentLineIndex) {
-        return line.slice(0, Math.min(currentCharIndex, line.length));
-      }
+      if (typingComplete || index < currentLineIndex) return line;
+      if (index === currentLineIndex) return line.slice(0, Math.min(currentCharIndex, line.length));
       return "";
     });
   }, [currentCharIndex, currentLineIndex, typingComplete]);
 
-  const cursorLineIndex = typingComplete
-    ? Math.max(typedLines.length - 1, 0)
-    : currentLineIndex;
-  const cursorTargetIndex = Math.max(
-    Math.min(cursorLineIndex, typedLines.length - 1),
-    0
-  );
+  const cursorLineIndex = typingComplete ? Math.max(typedLines.length - 1, 0) : currentLineIndex;
+  const cursorTargetIndex = Math.max(Math.min(cursorLineIndex, typedLines.length - 1), 0);
 
   useEffect(() => {
     if (!hasStarted) {
@@ -443,9 +475,7 @@ export default function App() {
 
     if (typingComplete) {
       if (!sceneStarted) {
-        const handle = window.setTimeout(() => {
-          setSceneStarted(true);
-        }, POST_TYPING_SCENE_DELAY);
+        const handle = window.setTimeout(() => setSceneStarted(true), POST_TYPING_SCENE_DELAY);
         return () => window.clearTimeout(handle);
       }
       return;
@@ -457,55 +487,34 @@ export default function App() {
         setCurrentCharIndex((prev) => prev + 1);
         return;
       }
-
       let nextLineIndex = currentLineIndex + 1;
-      while (
-        nextLineIndex < TYPED_LINES.length &&
-        TYPED_LINES[nextLineIndex].length === 0
-      ) {
-        nextLineIndex += 1;
-      }
-
+      while (nextLineIndex < TYPED_LINES.length && TYPED_LINES[nextLineIndex].length === 0) nextLineIndex += 1;
       setCurrentLineIndex(nextLineIndex);
       setCurrentCharIndex(0);
     }, TYPED_CHAR_DELAY);
 
     return () => window.clearTimeout(handle);
-  }, [
-    hasStarted,
-    currentCharIndex,
-    currentLineIndex,
-    typingComplete,
-    sceneStarted,
-  ]);
+  }, [hasStarted, currentCharIndex, currentLineIndex, typingComplete, sceneStarted]);
 
   useEffect(() => {
-    const handle = window.setInterval(() => {
-      setCursorVisible((prev) => !prev);
-    }, CURSOR_BLINK_INTERVAL);
+    const handle = window.setInterval(() => setCursorVisible((prev) => !prev), CURSOR_BLINK_INTERVAL);
     return () => window.clearInterval(handle);
   }, []);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.code !== "Space" && event.key !== " ") {
-        return;
-      }
+      if (event.code !== "Space" && event.key !== " ") return;
       event.preventDefault();
       if (!hasStarted) {
-        playBackgroundMusic();
-        setHasStarted(true);
-        return;
-      }
-      if (hasAnimationCompleted && isCandleLit) {
-        setIsCandleLit(false);
-        setFireworksActive(true);
+        handleStart();
+      } else {
+        handleBlowCandle();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [hasStarted, hasAnimationCompleted, isCandleLit, playBackgroundMusic]);
+  }, [hasStarted, handleStart, handleBlowCandle]);
 
   const handleCardToggle = useCallback((id: string) => {
     setActiveCardId((current) => (current === id ? null : id));
@@ -515,38 +524,48 @@ export default function App() {
 
   return (
     <div className="App">
-      <div
-        className="background-overlay"
-        style={{ opacity: backgroundOpacity }}
-      >
+      {/* 1. TOUCH TO START (Visible only before starting) */}
+      {!hasStarted && (
+        <div 
+          onClick={handleStart}
+          style={{
+            position: 'absolute', inset: 0, zIndex: 3000, 
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'white', fontSize: '14px', opacity: 0.5
+          }}
+        >
+          [ Tap anywhere to start ]
+        </div>
+      )}
+
+      <div className="background-overlay" style={{ opacity: backgroundOpacity }}>
         <div className="typed-text">
           {typedLines.map((line, index) => {
-            const showCursor =
-              cursorVisible &&
-              index === cursorTargetIndex &&
-              (!typingComplete || !sceneStarted);
+            const showCursor = cursorVisible && index === cursorTargetIndex && (!typingComplete || !sceneStarted);
             return (
               <span className="typed-line" key={`typed-line-${index}`}>
                 {line || "\u00a0"}
-                {showCursor && (
-                  <span aria-hidden="true" className="typed-cursor">
-                    _
-                  </span>
-                )}
+                {showCursor && <span aria-hidden="true" className="typed-cursor">_</span>}
               </span>
             );
           })}
         </div>
       </div>
+
+      {/* 2. HINT OVERLAY (Mobile friendly text) */}
       {hasAnimationCompleted && isCandleLit && (
-        <div className="hint-overlay">press space to blow out the candle</div>
+        <div className="hint-overlay">Press space or tap the button to blow the candle</div>
       )}
+
+      {/* 3. VIRTUAL KEYBOARD (Only appears when it's time to blow the candle) */}
+      {hasAnimationCompleted && isCandleLit && (
+        <VirtualKeyboard onAction={handleBlowCandle} />
+      )}
+
       <Canvas
         gl={{ alpha: true }}
         style={{ background: "transparent" }}
-        onCreated={({ gl }) => {
-          gl.setClearColor("#000000", 0);
-        }}
+        onCreated={({ gl }) => { gl.setClearColor("#000000", 0); }}
       >
         <Suspense fallback={null}>
           <AnimatedScene
