@@ -30,26 +30,13 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// --- CLOUDINARY CONFIG ---
+// --- CLOUDINARY CONFIG (Replace these with your actual IDs) ---
 const CLOUD_NAME = "YOUR_CLOUD_NAME"; 
 const UPLOAD_PRESET = "YOUR_UNSIGNED_PRESET";
 
 // --- CONSTANTS ---
 const TYPED_CHAR_DELAY = 100;
-const POST_TYPING_SCENE_DELAY = 1000;
 const CURSOR_BLINK_INTERVAL = 480;
-const CAKE_START_Y = 10;
-const CAKE_END_Y = 0;
-const CAKE_DESCENT_DURATION = 3;
-const TABLE_START_Z = 30;
-const TABLE_END_Z = 0;
-const TABLE_SLIDE_DURATION = 0.7;
-const TABLE_SLIDE_START = CAKE_DESCENT_DURATION - TABLE_SLIDE_DURATION - 0.1;
-const CANDLE_START_Y = 5;
-const CANDLE_END_Y = 0;
-const CANDLE_DROP_DURATION = 1.2;
-const CANDLE_DROP_START = Math.max(CAKE_DESCENT_DURATION, TABLE_SLIDE_START + TABLE_SLIDE_DURATION) + 1.0;
-const totalAnimationTime = CANDLE_DROP_START + CANDLE_DROP_DURATION;
 const ORBIT_TARGET = new Vector3(0, 1, 0);
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -87,16 +74,22 @@ export default function App() {
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   const backgroundAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  // 1. Check Cooldown and Data on Load
+  // 1. Dynamic Title & Data Load
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
     const id = queryParams.get("id");
 
     if (id) {
       getDoc(doc(db, "birthdays", id)).then((snap) => {
-        if (snap.exists()) setGiftData(snap.data());
+        if (snap.exists()) {
+          const data = snap.data();
+          setGiftData(data);
+          // SET DYNAMIC TITLE
+          document.title = `Happy ${data.age}th Birthday ${data.name}! 🎂`;
+        }
       });
     } else {
+      document.title = "3D Birthday Gift Generator";
       const lastCreation = localStorage.getItem("last_creation");
       if (lastCreation) {
         const nextDate = new Date(parseInt(lastCreation));
@@ -129,12 +122,13 @@ export default function App() {
     setIsUploading(true);
     try {
       const upload = async (file: File) => {
-        if (file.size > 3 * 1024 * 1024) throw new Error("File too big");
+        if (file.size > 3 * 1024 * 1024) throw new Error("File too big (Max 3MB)");
         const data = new FormData();
         data.append("file", file);
         data.append("upload_preset", UPLOAD_PRESET);
         const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: data });
-        return (await res.json()).secure_url;
+        const result = await res.json();
+        return result.secure_url;
       };
 
       const imageUrls = await Promise.all([...frames].map(upload));
@@ -145,6 +139,7 @@ export default function App() {
         age: e.target.age.value,
         frames: imageUrls,
         card: cardUrl,
+        createdAt: Date.now()
       });
 
       localStorage.setItem("last_creation", Date.now().toString());
@@ -155,7 +150,7 @@ export default function App() {
     setIsUploading(false);
   };
 
-  // 3. Audio & Scene Logic (Your Original Code)
+  // 3. Audio Control
   useEffect(() => {
     const audio = new Audio("/music.mp3");
     audio.loop = true;
@@ -166,11 +161,11 @@ export default function App() {
   const handleStart = () => { if (!hasStarted) { backgroundAudioRef.current?.play(); setHasStarted(true); } };
   const handleBlow = () => { if (hasAnimationCompleted && isCandleLit) { setIsCandleLit(false); setFireworksActive(true); } };
 
-  // Typing Effect
-  const lines = giftData ? [
+  // 4. Typing Effect Logic
+  const lines = useMemo(() => giftData ? [
     `> ${giftData.name}`, "...", `> today is your ${giftData.age}th birthday`, 
     "...", "> so i made this for u", "...", "٩(◕‿◕)۶ ٩(◕‿◕)۶ ٩(◕‿◕)۶"
-  ] : [];
+  ] : [], [giftData]);
 
   useEffect(() => {
     if (!hasStarted || !giftData || currentLineIndex >= lines.length) {
@@ -184,13 +179,17 @@ export default function App() {
         setCurrentLineIndex(prev => prev + 1);
         setCurrentCharIndex(0);
       }
-    }, 100);
+    }, TYPED_CHAR_DELAY);
     return () => clearTimeout(timeout);
-  }, [hasStarted, currentCharIndex, currentLineIndex, giftData, sceneStarted]);
+  }, [hasStarted, currentCharIndex, currentLineIndex, lines, sceneStarted, giftData]);
 
-  // --- RENDERING ---
+  useEffect(() => {
+    const interval = setInterval(() => setCursorVisible(v => !v), CURSOR_BLINK_INTERVAL);
+    return () => clearInterval(interval);
+  }, []);
 
-  // A. Cooldown Screen
+  // --- VIEW RENDERING ---
+
   if (isBlocked && !giftData) {
     return (
       <div className="App flex-center">
@@ -201,13 +200,13 @@ export default function App() {
     );
   }
 
-  // B. Generator Form
   if (!giftData) {
     return (
       <div className="App form-container">
         {generatedLink ? (
           <div className="result-card">
             <h3>SUCCESS!</h3>
+            <p>Share this link with her:</p>
             <input readOnly value={generatedLink} />
             <button onClick={() => navigator.clipboard.writeText(generatedLink)}>Copy Link</button>
           </div>
@@ -216,9 +215,9 @@ export default function App() {
             <h2>Birthday Generator</h2>
             <input name="name" placeholder="Her Name" required />
             <input name="age" type="number" placeholder="Age" required />
-            <p>Upload 4 Photos (Max 3MB):</p>
+            <p>Select 4 Photos:</p>
             <input name="frames" type="file" multiple accept="image/*" required />
-            <p>Upload Card (PNG ONLY):</p>
+            <p>Select Card (PNG):</p>
             <input name="card" type="file" accept="image/png" required />
             <button type="submit" disabled={isUploading}>{isUploading ? "Uploading..." : "Generate & Lock for 1 Year"}</button>
           </form>
@@ -227,7 +226,6 @@ export default function App() {
     );
   }
 
-  // C. The 3D Viewer (Your Original Return)
   return (
     <div className="App">
       {!hasStarted && <div onClick={handleStart} className="tap-start">[ Tap to open gift ]</div>}
@@ -245,7 +243,7 @@ export default function App() {
 
       {hasAnimationCompleted && isCandleLit && (
         <>
-          <div className="hint-overlay">Blow the candle!</div>
+          <div className="hint-overlay" style={{pointerEvents: 'none'}}>Blow the candle!</div>
           <VirtualKeyboard onAction={handleBlow} />
         </>
       )}
@@ -260,10 +258,11 @@ export default function App() {
             onAnimationComplete={() => setHasAnimationCompleted(true)}
             cards={[{ id: "card", image: giftData.card, position: [1, 0.081, -2], rotation: [-Math.PI / 2, 0, Math.PI / 3] }]}
             activeCardId={activeCardId}
-            onToggleCard={(id) => setActiveCardId(prev => prev === id ? null : id)}
+            onToggleCard={(id: string) => setActiveCardId(prev => prev === id ? null : id)}
             frames={giftData.frames}
           />
           <Environment files={["/shanghai_bund_4k.hdr"]} background environmentIntensity={0.1 * environmentProgress} />
+          <EnvironmentBackgroundController intensity={0.05 * environmentProgress} />
           <Fireworks isActive={fireworksActive} origin={[0, 10, 0]} />
           <ConfiguredOrbitControls />
           <ambientLight intensity={0.5} />
@@ -273,7 +272,8 @@ export default function App() {
   );
 }
 
-// --- ANIMATED SCENE WRAPPER ---
+// --- SUB-COMPONENTS ---
+
 function AnimatedScene({ isPlaying, candleLit, onBackgroundFadeChange, onEnvironmentProgressChange, onAnimationComplete, cards, activeCardId, onToggleCard, frames }: any) {
   const cake = useRef<Group>(null);
   const table = useRef<Group>(null);
@@ -285,6 +285,7 @@ function AnimatedScene({ isPlaying, candleLit, onBackgroundFadeChange, onEnviron
     if (startRef.current === null) startRef.current = clock.elapsedTime;
     
     const elapsed = clock.elapsedTime - startRef.current;
+    
     const cakeEase = easeOutCubic(clamp(elapsed / 3, 0, 1));
     cake.current.position.y = lerp(10, 0, cakeEase);
     
@@ -318,4 +319,25 @@ function AnimatedScene({ isPlaying, candleLit, onBackgroundFadeChange, onEnviron
   );
 }
 
-// ... (Keep ConfiguredOrbitControls and EnvironmentBackgroundController the same)
+function ConfiguredOrbitControls() {
+  const controlsRef = useRef<OrbitControlsImpl>(null);
+  const camera = useThree((state) => state.camera);
+
+  useEffect(() => {
+    camera.position.set(3, 2, 3);
+    if (controlsRef.current) {
+      controlsRef.current.target.copy(ORBIT_TARGET);
+      controlsRef.current.update();
+    }
+  }, [camera]);
+
+  return <OrbitControls ref={controlsRef} enableDamping dampingFactor={0.05} minDistance={2} maxDistance={8} maxPolarAngle={Math.PI / 2} />;
+}
+
+function EnvironmentBackgroundController({ intensity }: { intensity: number }) {
+  const scene = useThree((state) => state.scene);
+  useEffect(() => {
+    if ("backgroundIntensity" in scene) (scene as any).backgroundIntensity = intensity;
+  }, [scene, intensity]);
+  return null;
+}
