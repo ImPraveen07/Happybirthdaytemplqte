@@ -9,6 +9,8 @@ html, body {
   height: 100dvh; /* Dynamic height for mobile browsers */
   overflow: hidden;
   background: #0b0212;
+  color: #ffffff;
+  font-family: "Courier New", Courier, monospace;
 }
 
 #root {
@@ -23,6 +25,8 @@ html, body {
   overflow: hidden;
 }
 
+/* --- 3D VIEW STYLES --- */
+
 canvas {
   display: block;
   width: 100%;
@@ -33,47 +37,172 @@ canvas {
   z-index: 1;
 }
 
-/* The main UI container */
 .background-overlay {
   position: absolute;
   inset: 0;
   z-index: 2;
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* Pushes text to top, hint to bottom */
+  justify-content: space-between;
   align-items: center;
   padding: 3rem 1.5rem;
-  pointer-events: none; /* Allows clicking through to the 3D canvas */
+  pointer-events: none;
   color: #ffffff;
   text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .typed-text {
-  font-family: "Courier New", Courier, monospace;
-  font-size: clamp(1.5rem, 6vw, 2.5rem);
+  font-size: clamp(1.2rem, 5vw, 2rem);
   font-weight: 600;
   letter-spacing: 0.1em;
-  text-align: center;
+  text-align: left;
+  width: 100%;
+  max-width: 600px;
 }
 
-/* The 'Blow' Button/Hint Area */
+.typed-line {
+  display: block;
+  min-height: 1.5em;
+  margin-bottom: 0.5rem;
+}
+
+.typed-cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.2em;
+  background-color: white;
+  margin-left: 5px;
+  animation: blink 0.8s infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
 .hint-overlay {
   font-family: "Courier New", Courier, monospace;
-  font-size: 0.9rem;
-  letter-spacing: 0.3em;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: rgba(255, 242, 228, 0.9);
-  background: rgba(255, 255, 255, 0.05);
-  padding: 1rem 2rem;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1rem 1.5rem;
   border-radius: 50px;
-  backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  pointer-events: auto; /* Makes it clickable */
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  pointer-events: auto;
   z-index: 3;
-  transition: transform 0.2s ease;
+  transition: all 0.2s ease;
+  text-align: center;
 }
 
 .hint-overlay:active {
   transform: scale(0.95);
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.tap-start {
+  position: absolute;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 2, 18, 0.9);
+  color: white;
+  font-size: 0.9rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+/* --- GENERATOR & COOLDOWN STYLES --- */
+
+.form-container, .flex-center {
+  position: absolute;
+  inset: 0;
+  z-index: 4000;
+  background: #0b0212;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.upload-form {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.upload-form h2 {
+  margin-bottom: 1rem;
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+
+.upload-form p {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  margin-bottom: -0.5rem;
+}
+
+.upload-form input {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-family: inherit;
+}
+
+.upload-form button[type="submit"] {
+  margin-top: 1rem;
+  padding: 15px;
+  background: white;
+  color: black;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+.upload-form button:disabled {
+  opacity: 0.5;
+}
+
+.result-card {
+  text-align: center;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2rem;
+  border-radius: 15px;
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+}
+
+.result-card input {
+  width: 100%;
+  margin: 1.5rem 0;
+  padding: 10px;
+  text-align: center;
+  background: black;
+  border: 1px solid #333;
+  color: #00ff00;
+}
+
+.timer {
+  font-size: 1.8rem;
+  color: #ff4d4d;
+  margin: 1.5rem 0;
+  font-weight: bold;
+}
+
+.flex-center h2 {
+  color: #ff4d4d;
+  letter-spacing: 0.2em;
 }
