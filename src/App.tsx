@@ -31,8 +31,8 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // --- CLOUDINARY CONFIG (Replace these with your actual IDs) ---
-const CLOUD_NAME = "YOUR_CLOUD_NAME"; 
-const UPLOAD_PRESET = "YOUR_UNSIGNED_PRESET";
+        const CLOUD_NAME = "ditmmz5hk"; 
+        const UPLOAD_PRESET = "my_video_preset";
 
 // --- CONSTANTS ---
 const TYPED_CHAR_DELAY = 100;
