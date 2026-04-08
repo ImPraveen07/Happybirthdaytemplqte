@@ -114,7 +114,7 @@ const BACKGROUND_FADE_START = Math.max(
 const TYPED_LINES = [
   "> Sreekutty ",
   "...",
-  "> today is your birthday",
+  "> today is your 23'th birthday",
   "...",
   "> so i made this for u",
   "...",
