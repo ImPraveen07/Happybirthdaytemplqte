@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 
 const VirtualKeyboard = () => {
   // Define the keys you want to show (e.g., WASD or Arrows)
